@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: agnohq/pgvector:16
+    container_name: agno_memory_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: agno_memory
+    ports:
+      - "5432:5432"
+    volumes:
+      # THIS is what prevents context loss!
+      # It mounts the container's database storage to a local folder named `pgdata`.
+      # Even if you delete and respin the container, the data safely lives locally on your Mac.
+      - ./pgdata:/var/lib/postgresql/data
