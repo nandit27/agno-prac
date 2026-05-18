@@ -3,6 +3,19 @@ import asyncio
 import uuid
 from kb import knowledge_base
 
+def issue_refund(order_id: str, amount: float) -> str:
+    """Issues a standard refund under $500. This requires explicit human confirmation."""
+    print(f"[{time.strftime('%X')}] 🟡 CONFIRMATION REQUIRED: Issuing ${amount} refund for order {order_id}")
+    return f"Refund of ${amount} for order {order_id} processed successfully."
+issue_refund.requires_confirmation = True # Marking for HITL (Human-in-the-loop) in Agno
+
+def issue_large_refund(order_id: str, amount: float) -> str:
+    """Issues a large refund over $500. This must go to a Tier-3 Admin for approval."""
+    print(f"[{time.strftime('%X')}] 🔴 ADMIN APPROVAL REQUIRED: Routing ${amount} refund for order {order_id} to Admin Queue.")
+    return f"Refund of ${amount} for order {order_id} requires Admin Approval. Escalatated to Tier-3 team."
+# In real application, you might use @approval(type="required") here.
+issue_large_refund.requires_confirmation = True
+
 async def generate_ticket_id(customer_name: str, issue_type: str) -> str:
     """Generates a unique tracking ticket ID."""
     print(f"[{time.strftime('%X')}] 🟡 Start generate_ticket_id")

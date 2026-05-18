@@ -12,7 +12,9 @@ from tools import (
     check_loyalty_perks,
     fetch_order_history,
     verify_warranty_status,
-    insert_data_into_knowledge_base
+    insert_data_into_knowledge_base,
+    issue_refund,
+    issue_large_refund
 )
 from kb import knowledge_base
 
@@ -74,6 +76,33 @@ def get_coordinate_team() -> Team:
         model=MODEL,
     )
 
+# ==========================================
+# Phase 7: Hooks & Guardrails Definitions
+# ==========================================
+def pii_guardrail(agent: Agent, **kwargs) -> None:
+    """PRE-HOOK: Mask Credit Card information before LLM sees it."""
+    run_request = kwargs.get("run_request", {})
+    if hasattr(run_request, "messages"):
+        for msg in run_request.messages:
+            if isinstance(msg, dict) and "content" in msg and "4000" in msg.get("content", ""):
+                print(">> [GUARDRAIL INTERCEPT] PII Masked <<")
+                msg["content"] = msg["content"].replace("4000", "XXXX")
+    elif isinstance(run_request, dict) and "messages" in run_request:
+        for msg in run_request["messages"]:
+            if isinstance(msg, dict) and "content" in msg and "4000" in msg.get("content", ""):
+                print(">> [GUARDRAIL INTERCEPT] PII Masked <<")
+                msg["content"] = msg["content"].replace("4000", "XXXX")
+    
+    # Also check the raw message passed in kwargs if available
+    message = kwargs.get("message")
+    if hasattr(message, "content") and message.content and "4000" in message.content:
+         print(">> [GUARDRAIL INTERCEPT] PII Masked <<")
+         message.content = message.content.replace("4000", "XXXX")
+
+def audit_logger_hook(agent: Agent, **kwargs) -> None:
+    """POST-HOOK: Write to database audit log in background."""
+    print(f">> [AUDIT LOG] Transaction logged for agent: {agent.name} without slowing down user response. <<")
+
 # team 2 - route mode
 tech_support = Agent(
     name="Technical Support", 
@@ -88,10 +117,13 @@ tech_support = Agent(
 
 billing_support = Agent(
     name="Billing & Orders", 
-    role="Check order history and loyalty perks", 
-    tools=[fetch_order_history, check_loyalty_perks], 
+    role="Check order history, loyalty perks, and process refunds strictly.", 
+    tools=[fetch_order_history, check_loyalty_perks, issue_refund, issue_large_refund], 
+    instructions="Process refunds strictly. Do not repeat tool calls after a successful refund. If the requested refund is > $500, you MUST use the `issue_large_refund` tool to ensure Admin Approval. If it is <= $500, use `issue_refund`.",
     reasoning=True, 
-    model=MODEL
+    model=MODEL,
+    pre_hooks=[pii_guardrail],
+    post_hooks=[audit_logger_hook],
 )
 
 warranty_support = Agent(
