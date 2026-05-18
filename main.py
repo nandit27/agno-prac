@@ -19,6 +19,7 @@ async def main():
     print("="*50)
     query1 = input("User (Team 1): ")
     if query1.strip():
+        coordinate_team.session_state = {"customer_tier": "premium"}
         await coordinate_team.aprint_response(query1, stream=True)
 
     print("\n" + "="*50)
@@ -26,6 +27,7 @@ async def main():
     print("="*50)
     query2 = input("User (Team 2): ")
     if query2.strip():
+        route_team.session_state = {"customer_tier": "premium"}
         await route_team.aprint_response(query2, stream=True)
 
     print("\n" + "="*50)
@@ -33,6 +35,7 @@ async def main():
     print("="*50)
     query3 = input("User (Team 3): ")
     if query3.strip():
+        broadcast_team.session_state = {"customer_tier": "premium"}
         await broadcast_team.aprint_response(query3, stream=True)
 
 if __name__ == "__main__":

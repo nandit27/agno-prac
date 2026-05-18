@@ -48,8 +48,15 @@ account_agent = Agent(
     model=MODEL
 )
 
-def _coordinate_members(session_state: dict):
-    return [ticket_agent, resolution_agent, account_agent]
+def _coordinate_members(session_state: dict = None):
+    session_state = session_state or {}
+    tier = session_state.get("customer_tier", "basic")
+    if tier == "premium":
+        members = [ticket_agent, resolution_agent, account_agent]
+    else:
+        members = [ticket_agent, resolution_agent]
+    print(f"\\n[Factory] _coordinate_members executing... Tier: '{tier}' -> Members: {[m.name for m in members]}")
+    return members
 
 def get_coordinate_team() -> Team:
     return Team(
@@ -88,15 +95,22 @@ billing_support = Agent(
 )
 
 warranty_support = Agent(
-    name="Warranty Queries", 
-    role="Verify warranty status for serial numbers", 
+    name="Warranty Queries",
+    role="Verify warranty status for serial numbers",
     tools=[verify_warranty_status], 
     reasoning=True, 
     model=MODEL
 )
 
-def _route_members(session_state: dict):
-    return [tech_support, billing_support, warranty_support]
+def _route_members(session_state: dict = None):
+    session_state = session_state or {}
+    tier = session_state.get("customer_tier", "basic")
+    if tier == "premium":
+        members = [tech_support, billing_support, warranty_support]
+    else:
+        members = [tech_support, billing_support]
+    print(f"\\n[Factory] _route_members executing... Tier: '{tier}' -> Members: {[m.name for m in members]}")
+    return members
 
 def get_route_team() -> Team:
     return Team(
@@ -135,8 +149,15 @@ kb_researcher = Agent(
     model=MODEL
 )
 
-def _broadcast_members(session_state: dict):
-    return [sentiment_analyzer, fraud_checker, kb_researcher]
+def _broadcast_members(session_state: dict = None):
+    session_state = session_state or {}
+    tier = session_state.get("customer_tier", "basic")
+    if tier == "premium":
+        members = [sentiment_analyzer, fraud_checker, kb_researcher]
+    else:
+        members = [sentiment_analyzer, kb_researcher]
+    print(f"\\n[Factory] _broadcast_members executing... Tier: '{tier}' -> Members: {[m.name for m in members]}")
+    return members
 
 def get_broadcast_team() -> Team:
     return Team(
